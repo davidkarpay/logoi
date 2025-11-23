@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>AI Logo Generator - Secure & Encrypted</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .glass {
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen gradient-bg flex items-center justify-center p-4">
+        <div class="glass max-w-4xl w-full rounded-2xl p-8 shadow-2xl">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="mb-4">
+                    <span class="text-6xl">🎨</span>
+                </div>
+                <h1 class="text-4xl font-bold text-gray-800 mb-3">
+                    AI Logo Generator
+                </h1>
+                <p class="text-lg text-gray-600">
+                    Secure, Encrypted, Client-Side AI Image Generation
+                </p>
+                <div class="mt-4 flex justify-center gap-2">
+                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                        🔒 AES-256 Encrypted
+                    </span>
+                    <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                        📱 Mobile Optimized
+                    </span>
+                    <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                        🚀 GitHub Pages
+                    </span>
+                </div>
+            </div>
+
+            <!-- Main Options Grid -->
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+                <!-- Logo Generator -->
+                <a href="./logo-generator.html" class="card bg-white rounded-xl p-6 shadow-lg block hover:no-underline">
+                    <div class="text-center">
+                        <div class="text-5xl mb-4">🎨</div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                            Logo Generator
+                        </h2>
+                        <p class="text-gray-600 text-sm mb-4">
+                            Create AI-generated logos with multiple models. Your encrypted API key is stored locally in your browser.
+                        </p>
+                        <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-lg font-semibold">
+                            Start Creating →
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Encryption Helper -->
+                <a href="./encrypt-key-helper.html" class="card bg-white rounded-xl p-6 shadow-lg block hover:no-underline">
+                    <div class="text-center">
+                        <div class="text-5xl mb-4">🔐</div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                            Encryption Helper
+                        </h2>
+                        <p class="text-gray-600 text-sm mb-4">
+                            Encrypt/decrypt your HuggingFace API key offline. Test the encryption system.
+                        </p>
+                        <div class="bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg font-semibold">
+                            Manage Keys →
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Features -->
+            <div class="bg-white rounded-xl p-6 shadow-lg mb-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">
+                    ✨ Key Features
+                </h3>
+                <div class="grid md:grid-cols-3 gap-4 text-sm">
+                    <div class="text-center p-3">
+                        <div class="text-3xl mb-2">🔒</div>
+                        <h4 class="font-semibold text-gray-800 mb-1">Secure Encryption</h4>
+                        <p class="text-gray-600 text-xs">
+                            AES-256-GCM encryption with PBKDF2 key derivation
+                        </p>
+                    </div>
+                    <div class="text-center p-3">
+                        <div class="text-3xl mb-2">💾</div>
+                        <h4 class="font-semibold text-gray-800 mb-1">Local Storage</h4>
+                        <p class="text-gray-600 text-xs">
+                            Your encrypted key persists in browser localStorage
+                        </p>
+                    </div>
+                    <div class="text-center p-3">
+                        <div class="text-3xl mb-2">🌐</div>
+                        <h4 class="font-semibold text-gray-800 mb-1">No Backend</h4>
+                        <p class="text-gray-600 text-xs">
+                            Everything runs client-side, no server required
+                        </p>
+                    </div>
+                    <div class="text-center p-3">
+                        <div class="text-3xl mb-2">📱</div>
+                        <h4 class="font-semibold text-gray-800 mb-1">Mobile Ready</h4>
+                        <p class="text-gray-600 text-xs">
+                            Optimized for iPhone/iPad with PWA support
+                        </p>
+                    </div>
+                    <div class="text-center p-3">
+                        <div class="text-3xl mb-2">🚀</div>
+                        <h4 class="font-semibold text-gray-800 mb-1">Multi-Model</h4>
+                        <p class="text-gray-600 text-xs">
+                            Generate from multiple AI models in parallel
+                        </p>
+                    </div>
+                    <div class="text-center p-3">
+                        <div class="text-3xl mb-2">✅</div>
+                        <h4 class="font-semibold text-gray-800 mb-1">Zero Knowledge</h4>
+                        <p class="text-gray-600 text-xs">
+                            Your keys never leave your device unencrypted
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Start -->
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 shadow-lg mb-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">
+                    🚀 Quick Start
+                </h3>
+                <ol class="space-y-3 text-sm text-gray-700">
+                    <li class="flex items-start">
+                        <span class="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0 font-bold text-xs">1</span>
+                        <span>
+                            Get a free HuggingFace API key at
+                            <a href="https://huggingface.co/settings/tokens" target="_blank" class="text-purple-600 hover:underline font-semibold">
+                                huggingface.co/settings/tokens
+                            </a>
+                        </span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0 font-bold text-xs">2</span>
+                        <span>Click <strong>"Logo Generator"</strong> above to open the app</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0 font-bold text-xs">3</span>
+                        <span>Enter your API key and create a strong encryption password</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0 font-bold text-xs">4</span>
+                        <span><strong>Your key is encrypted and saved!</strong> Use the same browser to access it anytime</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0 font-bold text-xs">5</span>
+                        <span>Bookmark this page on your phone for easy access!</span>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- Security Notice -->
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded mb-6">
+                <div class="flex items-start">
+                    <div class="text-2xl mr-3">🔐</div>
+                    <div>
+                        <h4 class="font-semibold text-yellow-800 mb-1">How Your Data is Protected</h4>
+                        <p class="text-sm text-yellow-700">
+                            Your API key is encrypted with <strong>AES-256-GCM</strong> using a password only you know.
+                            The encrypted key is stored in your browser's localStorage. When you return, just enter
+                            your password to decrypt it. Your plaintext key never touches any server except HuggingFace's API.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentation Links -->
+            <div class="grid md:grid-cols-3 gap-4 text-center text-sm">
+                <a href="./README.md" class="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow">
+                    <div class="text-2xl mb-2">📖</div>
+                    <div class="font-semibold text-gray-800">Documentation</div>
+                </a>
+                <a href="./SECURITY.md" class="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow">
+                    <div class="text-2xl mb-2">🛡️</div>
+                    <div class="font-semibold text-gray-800">Security Guide</div>
+                </a>
+                <a href="https://github.com/davidkarpay/logoi" target="_blank" class="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow">
+                    <div class="text-2xl mb-2">💻</div>
+                    <div class="font-semibold text-gray-800">View on GitHub</div>
+                </a>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-8 text-center text-sm text-gray-600">
+                <p>Made with ❤️ for secure AI image generation</p>
+                <p class="mt-2 text-xs">
+                    Open Source • Client-Side • Privacy-First • No Backend Required
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auto-redirect to logo generator (optional, commented out) -->
+    <!--
+    <script>
+        // Uncomment to auto-redirect to logo generator
+        // setTimeout(() => {
+        //     window.location.href = './logo-generator.html';
+        // }, 3000);
+    </script>
+    -->
+</body>
+</html>

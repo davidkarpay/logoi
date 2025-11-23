@@ -11,6 +11,10 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Secure API Key Management -->
+    <script src="./secure-key-manager.js"></script>
+    <script src="./hf-api-integration.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -148,6 +152,15 @@
         const [selectedImage, setSelectedImage] = useState(null);
         const fileInputRef = useRef(null);
 
+        // API Key Management State
+        const [apiKey, setApiKey] = useState('');
+        const [showKeySetup, setShowKeySetup] = useState(true);
+        const [encryptionPassword, setEncryptionPassword] = useState('');
+        const [useEncryption, setUseEncryption] = useState(true);
+        const [keyManager] = useState(() => new SecureKeyManager());
+        const [hfGenerator, setHfGenerator] = useState(null);
+        const [apiKeyStatus, setApiKeyStatus] = useState('not_configured'); // not_configured, configured, decrypting
+
         useEffect(() => {
             // Check for dark mode preference
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -162,6 +175,96 @@
                 document.documentElement.classList.remove('dark');
             }
         }, [darkMode]);
+
+        // Check for stored encrypted key on mount
+        useEffect(() => {
+            const storedKey = keyManager.getStoredEncryptedKey();
+            if (storedKey) {
+                setShowKeySetup(true);
+                setApiKeyStatus('needs_decryption');
+            }
+        }, []);
+
+        // API Key Management Functions
+        const handleSaveApiKey = async () => {
+            try {
+                if (!apiKey.trim()) {
+                    alert('Please enter your HuggingFace API key');
+                    return;
+                }
+
+                if (useEncryption && !encryptionPassword) {
+                    alert('Please enter an encryption password');
+                    return;
+                }
+
+                let finalKey = apiKey;
+
+                if (useEncryption) {
+                    // Encrypt the API key
+                    finalKey = await keyManager.encryptKey(apiKey, encryptionPassword);
+                    keyManager.storeEncryptedKey(finalKey);
+                }
+
+                // Initialize HuggingFace generator
+                const generator = new HuggingFaceMultiGenerator(useEncryption ? apiKey : finalKey, {
+                    isEncrypted: false,
+                    validateKey: true
+                });
+
+                setHfGenerator(generator);
+                setApiKeyStatus('configured');
+                setShowKeySetup(false);
+                setApiKey(''); // Clear from state for security
+                setEncryptionPassword(''); // Clear password from state
+
+                alert('API key configured successfully!');
+            } catch (error) {
+                console.error('Error saving API key:', error);
+                alert(`Error: ${error.message}`);
+            }
+        };
+
+        const handleDecryptStoredKey = async () => {
+            try {
+                if (!encryptionPassword) {
+                    alert('Please enter your encryption password');
+                    return;
+                }
+
+                setApiKeyStatus('decrypting');
+
+                const encryptedKey = keyManager.getStoredEncryptedKey();
+                const decryptedKey = await keyManager.decryptKey(encryptedKey, encryptionPassword);
+
+                // Initialize HuggingFace generator
+                const generator = new HuggingFaceMultiGenerator(decryptedKey, {
+                    isEncrypted: false,
+                    validateKey: true
+                });
+
+                setHfGenerator(generator);
+                setApiKeyStatus('configured');
+                setShowKeySetup(false);
+                setEncryptionPassword(''); // Clear password from state
+
+                alert('API key decrypted successfully!');
+            } catch (error) {
+                console.error('Error decrypting API key:', error);
+                setApiKeyStatus('needs_decryption');
+                alert('Failed to decrypt. Please check your password.');
+            }
+        };
+
+        const handleClearStoredKey = () => {
+            if (confirm('Are you sure you want to clear your stored encrypted API key?')) {
+                keyManager.clearStoredKey();
+                setHfGenerator(null);
+                setApiKeyStatus('not_configured');
+                setShowKeySetup(true);
+                alert('Stored key cleared successfully');
+            }
+        };
 
         const generateLogos = async () => {
             if (!prompt.trim()) {
@@ -215,12 +318,21 @@
         };
 
         const generateWithModel = async (modelId, prompt) => {
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1500));
-            
-            // In production, replace this with actual Hugging Face API call
-            // For now, return a placeholder
-            return { imageUrl: createPlaceholderImage(prompt, modelId) };
+            // If API key is configured, use real HuggingFace API
+            if (hfGenerator && hfGenerator.hasApiKey()) {
+                try {
+                    const result = await hfGenerator.generateWithModel(modelId, prompt);
+                    return result;
+                } catch (error) {
+                    console.error('HuggingFace API error:', error);
+                    // Fallback to placeholder on error
+                    return { imageUrl: createPlaceholderImage(prompt, modelId) };
+                }
+            } else {
+                // Use placeholder if no API key configured
+                await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1500));
+                return { imageUrl: createPlaceholderImage(prompt, modelId) };
+            }
         };
 
         const createPlaceholderImage = (text, model) => {
@@ -382,6 +494,137 @@
             </div>
         );
 
+        const ApiKeySetup = () => {
+            if (!showKeySetup) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30 p-4">
+                    <div className="glass max-w-md w-full rounded-2xl p-6">
+                        <h2 className="text-xl font-bold text-white mb-4">
+                            🔐 API Key Setup
+                        </h2>
+
+                        {apiKeyStatus === 'needs_decryption' ? (
+                            <div className="space-y-4">
+                                <p className="text-white text-opacity-90 text-sm">
+                                    You have an encrypted API key stored. Enter your password to decrypt it.
+                                </p>
+                                <div>
+                                    <label className="block text-sm font-medium text-white mb-2">
+                                        Decryption Password
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={encryptionPassword}
+                                        onChange={(e) => setEncryptionPassword(e.target.value)}
+                                        placeholder="Enter your password"
+                                        className="w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    />
+                                </div>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={handleDecryptStoredKey}
+                                        className="flex-1 bg-purple-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-600 transition-colors"
+                                    >
+                                        Decrypt & Use
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setApiKeyStatus('not_configured');
+                                        }}
+                                        className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                                    >
+                                        Use New Key
+                                    </button>
+                                </div>
+                                <button
+                                    onClick={handleClearStoredKey}
+                                    className="w-full bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600 transition-colors text-sm"
+                                >
+                                    Clear Stored Key
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <p className="text-white text-opacity-90 text-sm">
+                                    Enter your HuggingFace API key to generate real images.
+                                    <a href="https://huggingface.co/settings/tokens" target="_blank" className="text-blue-300 hover:text-blue-200 underline ml-1">
+                                        Get one here
+                                    </a>
+                                </p>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-white mb-2">
+                                        HuggingFace API Key
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={apiKey}
+                                        onChange={(e) => setApiKey(e.target.value)}
+                                        placeholder="hf_..."
+                                        className="w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    />
+                                </div>
+
+                                <div className="flex items-center space-x-2">
+                                    <input
+                                        type="checkbox"
+                                        id="useEncryption"
+                                        checked={useEncryption}
+                                        onChange={(e) => setUseEncryption(e.target.checked)}
+                                        className="w-4 h-4 text-purple-500"
+                                    />
+                                    <label htmlFor="useEncryption" className="text-sm text-white text-opacity-90">
+                                        Encrypt and store API key (recommended)
+                                    </label>
+                                </div>
+
+                                {useEncryption && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-white mb-2">
+                                            Encryption Password
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={encryptionPassword}
+                                            onChange={(e) => setEncryptionPassword(e.target.value)}
+                                            placeholder="Create a strong password"
+                                            className="w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                        />
+                                        <p className="text-xs text-white text-opacity-70 mt-1">
+                                            You'll need this password each time you use the app
+                                        </p>
+                                    </div>
+                                )}
+
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={handleSaveApiKey}
+                                        className="flex-1 bg-purple-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-600 transition-colors"
+                                    >
+                                        Save & Continue
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowKeySetup(false);
+                                        }}
+                                        className="px-4 py-2 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                                    >
+                                        Skip (Use Placeholders)
+                                    </button>
+                                </div>
+
+                                <p className="text-xs text-white text-opacity-70">
+                                    🔒 Your API key is encrypted using AES-256-GCM and stored locally in your browser.
+                                    It never leaves your device except when making requests to HuggingFace.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
         const ImageModal = () => {
             if (!selectedImage) return null;
 
@@ -541,12 +784,21 @@
                                         Multi-Model AI Design Studio
                                     </p>
                                 </div>
-                                <button
-                                    onClick={() => setDarkMode(!darkMode)}
-                                    className="w-10 h-10 rounded-full glass flex items-center justify-center text-white"
-                                >
-                                    {darkMode ? '☀️' : '🌙'}
-                                </button>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => setShowKeySetup(true)}
+                                        className="w-10 h-10 rounded-full glass flex items-center justify-center text-white"
+                                        title="API Key Settings"
+                                    >
+                                        {apiKeyStatus === 'configured' ? '🔓' : '🔐'}
+                                    </button>
+                                    <button
+                                        onClick={() => setDarkMode(!darkMode)}
+                                        className="w-10 h-10 rounded-full glass flex items-center justify-center text-white"
+                                    >
+                                        {darkMode ? '☀️' : '🌙'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -657,6 +909,9 @@
 
                     {/* Image Modal */}
                     <ImageModal />
+
+                    {/* API Key Setup Modal */}
+                    <ApiKeySetup />
 
                     {/* Footer */}
                     <div className="glass mt-8">

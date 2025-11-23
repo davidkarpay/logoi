@@ -2,10 +2,18 @@
 // This module handles communication with multiple HF image generation models
 
 class HuggingFaceMultiGenerator {
-    constructor(apiKey = null) {
+    constructor(apiKey = null, options = {}) {
         // You can get a free API key at https://huggingface.co/settings/tokens
-        this.apiKey = apiKey || 'YOUR_HF_API_KEY_HERE';
-        
+        // For security, it's recommended to use the setApiKey() method or pass encrypted keys
+        this.apiKey = apiKey || null;
+        this.isEncrypted = options.isEncrypted || false;
+        this.keyValidator = options.validateKey !== false; // enabled by default
+
+        // If API key is provided and validation is enabled, validate it
+        if (this.apiKey && this.keyValidator && !this.isEncrypted) {
+            this.validateApiKey(this.apiKey);
+        }
+
         // Available models for logo generation
         this.models = {
             'stabilityai/stable-diffusion-2-1': {
@@ -55,6 +63,60 @@ class HuggingFaceMultiGenerator {
         };
     }
 
+    // Validate HuggingFace API key format
+    validateApiKey(apiKey) {
+        if (!apiKey) {
+            throw new Error('API key is required');
+        }
+
+        // HuggingFace API keys typically start with 'hf_' and are alphanumeric
+        const hfKeyPattern = /^hf_[A-Za-z0-9]{30,}$/;
+
+        if (!hfKeyPattern.test(apiKey)) {
+            console.warn('Warning: API key format may be invalid. HuggingFace keys typically start with "hf_"');
+        }
+
+        return true;
+    }
+
+    // Set or update API key (supports both plain and encrypted keys)
+    setApiKey(apiKey, isEncrypted = false) {
+        this.apiKey = apiKey;
+        this.isEncrypted = isEncrypted;
+
+        if (!isEncrypted && this.keyValidator) {
+            this.validateApiKey(apiKey);
+        }
+
+        return true;
+    }
+
+    // Check if API key is configured
+    hasApiKey() {
+        return this.apiKey !== null && this.apiKey !== '';
+    }
+
+    // Clear API key from memory (security best practice)
+    clearApiKey() {
+        this.apiKey = null;
+        this.isEncrypted = false;
+    }
+
+    // Get masked API key for display (security)
+    getMaskedApiKey() {
+        if (!this.apiKey) {
+            return 'Not configured';
+        }
+        if (this.isEncrypted) {
+            return '[Encrypted]';
+        }
+        // Show first 6 and last 4 characters
+        if (this.apiKey.length > 10) {
+            return `${this.apiKey.substring(0, 6)}...${this.apiKey.substring(this.apiKey.length - 4)}`;
+        }
+        return '***';
+    }
+
     // Enhance prompt for logo generation
     enhancePromptForLogo(basePrompt) {
         const enhancements = [
@@ -71,6 +133,11 @@ class HuggingFaceMultiGenerator {
 
     // Generate image using a specific model
     async generateWithModel(modelId, prompt, params = {}) {
+        // Security check: ensure API key is configured
+        if (!this.hasApiKey()) {
+            throw new Error('API key not configured. Please set your HuggingFace API key first.');
+        }
+
         const model = this.models[modelId];
         if (!model) {
             throw new Error(`Model ${modelId} not found`);
