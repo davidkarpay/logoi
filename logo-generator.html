@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Multi-Model Logo Generator</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'gradient': 'gradient 8s ease infinite',
+                    },
+                    keyframes: {
+                        gradient: {
+                            '0%, 100%': { backgroundPosition: '0% 50%' },
+                            '50%': { backgroundPosition: '100% 50%' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+```
+    .glass {
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    
+    .dark .glass {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .loading-spinner {
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 3px solid white;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .image-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px;
+    }
+    
+    .image-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+        pointer-events: none;
+    }
+    
+    /* iOS specific optimizations */
+    @supports (-webkit-touch-callout: none) {
+        .safe-area-top {
+            padding-top: env(safe-area-inset-top);
+        }
+        .safe-area-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    }
+    
+    /* Smooth scrolling for gallery */
+    .gallery-scroll {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    .gallery-scroll::-webkit-scrollbar {
+        display: none;
+    }
+</style>
+```
+
+</head>
+<body>
+    <div id="root"></div>
+
+```
+<script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+    
+    const MODELS = [
+        { 
+            id: 'mcp-tools/Qwen-Image-Fast', 
+            name: 'Qwen Image Fast',
+            icon: '⚡',
+            type: 'fast'
+        },
+        {
+            id: 'prithivMLmods/FLUX-LoRA-DLC',
+            name: 'FLUX LoRA DLC',
+            icon: '🥳',
+            type: 'quality'
+        },
+        {
+            id: 'prithivMLmods/FLUX-LoRA-DLC2',
+            name: 'FLUX LoRA DLC2',
+            icon: '🔥',
+            type: 'quality'
+        },
+        {
+            id: 'black-forest-labs/FLUX.1-Kontext-Dev',
+            name: 'FLUX Kontext',
+            icon: '⚡',
+            type: 'advanced'
+        }
+    ];
+
+    function LogoGenerator() {
+        const [prompt, setPrompt] = useState('');
+        const [gallery, setGallery] = useState([]);
+        const [loading, setLoading] = useState(false);
+        const [selectedModels, setSelectedModels] = useState(MODELS.map(m => m.id));
+        const [progress, setProgress] = useState({});
+        const [darkMode, setDarkMode] = useState(false);
+        const [viewMode, setViewMode] = useState('grid'); // grid, list, carousel
+        const [selectedImage, setSelectedImage] = useState(null);
+        const fileInputRef = useRef(null);
+
+        useEffect(() => {
+            // Check for dark mode preference
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                setDarkMode(true);
+            }
+        }, []);
+
+        useEffect(() => {
+            if (darkMode) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }, [darkMode]);
+
+        const generateLogos = async () => {
+            if (!prompt.trim()) {
+                alert('Please enter a prompt for your logo');
+                return;
+            }
+
+            setLoading(true);
+            setProgress({});
+            
+            // Clear previous results
+            setGallery([]);
+
+            // Process each selected model
+            for (const modelId of selectedModels) {
+                const model = MODELS.find(m => m.id === modelId);
+                setProgress(prev => ({
+                    ...prev,
+                    [modelId]: { status: 'loading', name: model.name }
+                }));
+
+                try {
+                    // Simulate API call to Hugging Face model
+                    // In production, you would use the actual Hugging Face API
+                    const response = await generateWithModel(modelId, prompt);
+                    
+                    const newImage = {
+                        id: Date.now() + Math.random(),
+                        src: response.imageUrl || createPlaceholderImage(prompt, model.name),
+                        model: model.name,
+                        modelIcon: model.icon,
+                        prompt: prompt,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    setGallery(prev => [...prev, newImage]);
+                    setProgress(prev => ({
+                        ...prev,
+                        [modelId]: { status: 'complete', name: model.name }
+                    }));
+                } catch (error) {
+                    console.error(`Error with ${model.name}:`, error);
+                    setProgress(prev => ({
+                        ...prev,
+                        [modelId]: { status: 'error', name: model.name, error: error.message }
+                    }));
+                }
+            }
+
+            setLoading(false);
+        };
+
+        const generateWithModel = async (modelId, prompt) => {
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1500));
+            
+            // In production, replace this with actual Hugging Face API call
+            // For now, return a placeholder
+            return { imageUrl: createPlaceholderImage(prompt, modelId) };
+        };
+
+        const createPlaceholderImage = (text, model) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            // Create gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+            const colors = [
+                ['#667eea', '#764ba2'],
+                ['#f093fb', '#f5576c'],
+                ['#4facfe', '#00f2fe'],
+                ['#43e97b', '#38f9d7'],
+                ['#fa709a', '#fee140'],
+                ['#30cfd0', '#330867']
+            ];
+            const colorPair = colors[Math.floor(Math.random() * colors.length)];
+            gradient.addColorStop(0, colorPair[0]);
+            gradient.addColorStop(1, colorPair[1]);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 512, 512);
+            
+            // Add logo text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 48px system-ui';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0,0,0,0.3)';
+            ctx.shadowBlur = 10;
+            
+            // Word wrap
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = words[0];
+            
+            for (let i = 1; i < words.length; i++) {
+                const testLine = currentLine + ' ' + words[i];
+                const metrics = ctx.measureText(testLine);
+                if (metrics.width > 400) {
+                    lines.push(currentLine);
+                    currentLine = words[i];
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            lines.push(currentLine);
+            
+            const lineHeight = 60;
+            const startY = 256 - (lines.length - 1) * lineHeight / 2;
+            
+            lines.forEach((line, index) => {
+                ctx.fillText(line, 256, startY + index * lineHeight);
+            });
+            
+            // Add model watermark
+            ctx.font = '14px system-ui';
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.textAlign = 'right';
+            ctx.fillText(model, 502, 492);
+            
+            return canvas.toDataURL('image/png');
+        };
+
+        const downloadImage = (image) => {
+            const link = document.createElement('a');
+            link.href = image.src;
+            link.download = `logo-${image.model.replace(/\s+/g, '-')}-${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        const shareImage = async (image) => {
+            if (navigator.share && navigator.canShare) {
+                try {
+                    const blob = await fetch(image.src).then(r => r.blob());
+                    const file = new File([blob], `logo-${Date.now()}.png`, { type: 'image/png' });
+                    
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Logo Design',
+                            text: `Logo generated with prompt: "${image.prompt}"`
+                        });
+                    } else {
+                        downloadImage(image);
+                    }
+                } catch (error) {
+                    console.error('Error sharing:', error);
+                    downloadImage(image);
+                }
+            } else {
+                downloadImage(image);
+            }
+        };
+
+        const downloadAll = () => {
+            gallery.forEach((image, index) => {
+                setTimeout(() => downloadImage(image), index * 500);
+            });
+        };
+
+        const clearGallery = () => {
+            if (confirm('Are you sure you want to clear all generated logos?')) {
+                setGallery([]);
+                setProgress({});
+            }
+        };
+
+        const ModelSelector = () => (
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Select Models ({selectedModels.length}/{MODELS.length})
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                    {MODELS.map(model => (
+                        <button
+                            key={model.id}
+                            onClick={() => {
+                                setSelectedModels(prev => 
+                                    prev.includes(model.id) 
+                                        ? prev.filter(id => id !== model.id)
+                                        : [...prev, model.id]
+                                );
+                            }}
+                            className={`p-2 rounded-lg text-xs font-medium transition-all ${
+                                selectedModels.includes(model.id)
+                                    ? 'bg-purple-500 text-white'
+                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                            }`}
+                        >
+                            <span className="mr-1">{model.icon}</span>
+                            {model.name}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        );
+
+        const ProgressIndicator = () => (
+            <div className="space-y-2">
+                {Object.entries(progress).map(([modelId, status]) => (
+                    <div key={modelId} className="flex items-center space-x-2">
+                        <div className={`w-4 h-4 rounded-full ${
+                            status.status === 'loading' ? 'loading-spinner' :
+                            status.status === 'complete' ? 'bg-green-500' :
+                            status.status === 'error' ? 'bg-red-500' : 'bg-gray-300'
+                        }`} />
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                            {status.name}
+                            {status.status === 'error' && (
+                                <span className="text-red-500 ml-2">Failed</span>
+                            )}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        );
+
+        const ImageModal = () => {
+            if (!selectedImage) return null;
+
+            return (
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75"
+                    onClick={() => setSelectedImage(null)}
+                >
+                    <div 
+                        className="relative max-w-4xl w-full"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <img 
+                            src={selectedImage.src} 
+                            alt="Logo" 
+                            className="w-full rounded-lg"
+                        />
+                        <button
+                            onClick={() => setSelectedImage(null)}
+                            className="absolute top-4 right-4 w-10 h-10 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-800 dark:text-white"
+                        >
+                            ✕
+                        </button>
+                        <div className="absolute bottom-4 left-4 right-4 glass rounded-lg p-4">
+                            <p className="text-white font-medium">{selectedImage.model}</p>
+                            <p className="text-white text-sm opacity-90">{selectedImage.prompt}</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const GalleryView = () => {
+            if (gallery.length === 0) {
+                return (
+                    <div className="text-center py-12">
+                        <div className="text-6xl mb-4">🎨</div>
+                        <p className="text-gray-500 dark:text-gray-400">
+                            No logos generated yet. Enter a prompt above to get started!
+                        </p>
+                    </div>
+                );
+            }
+
+            if (viewMode === 'carousel') {
+                return (
+                    <div className="relative">
+                        <div className="gallery-scroll flex space-x-4 overflow-x-auto pb-4">
+                            {gallery.map((image) => (
+                                <div 
+                                    key={image.id}
+                                    className="flex-shrink-0 w-80"
+                                >
+                                    <div className="image-container relative">
+                                        <img 
+                                            src={image.src} 
+                                            alt="Generated Logo"
+                                            className="w-full rounded-lg cursor-pointer"
+                                            onClick={() => setSelectedImage(image)}
+                                        />
+                                        <div className="absolute top-2 left-2 glass rounded-lg px-2 py-1">
+                                            <span className="text-white text-xs font-medium">
+                                                {image.modelIcon} {image.model}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between mt-2">
+                                        <button
+                                            onClick={() => shareImage(image)}
+                                            className="flex-1 mr-1 bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+                                        >
+                                            Share/Save
+                                        </button>
+                                        <button
+                                            onClick={() => downloadImage(image)}
+                                            className="flex-1 ml-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                                        >
+                                            Download
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-4' : 'space-y-4'}>
+                    {gallery.map((image) => (
+                        <div 
+                            key={image.id}
+                            className={viewMode === 'list' ? 'flex space-x-4 glass rounded-lg p-4' : ''}
+                        >
+                            <div className={viewMode === 'list' ? 'w-32 h-32 flex-shrink-0' : ''}>
+                                <div className="image-container relative">
+                                    <img 
+                                        src={image.src} 
+                                        alt="Generated Logo"
+                                        className={`${viewMode === 'list' ? 'w-full h-full object-cover' : 'w-full'} rounded-lg cursor-pointer`}
+                                        onClick={() => setSelectedImage(image)}
+                                    />
+                                    {viewMode === 'grid' && (
+                                        <div className="absolute top-2 left-2 glass rounded-lg px-2 py-1">
+                                            <span className="text-white text-xs font-medium">
+                                                {image.modelIcon} {image.model}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className={viewMode === 'list' ? 'flex-1' : 'mt-2'}>
+                                {viewMode === 'list' && (
+                                    <div className="mb-2">
+                                        <h3 className="font-medium text-gray-800 dark:text-white">
+                                            {image.modelIcon} {image.model}
+                                        </h3>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            {image.prompt}
+                                        </p>
+                                    </div>
+                                )}
+                                <div className={`flex ${viewMode === 'list' ? 'space-x-2' : 'space-x-1'}`}>
+                                    <button
+                                        onClick={() => shareImage(image)}
+                                        className="flex-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-blue-600 transition-colors"
+                                    >
+                                        Share
+                                    </button>
+                                    <button
+                                        onClick={() => downloadImage(image)}
+                                        className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-lg text-xs font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                                    >
+                                        Save
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+
+        return (
+            <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
+                <div className="gradient-bg fixed inset-0" />
+                <div className="relative z-10 min-h-screen">
+                    {/* Header */}
+                    <div className="safe-area-top glass sticky top-0 z-20">
+                        <div className="px-4 py-4">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h1 className="text-2xl font-bold text-white">
+                                        Logo Generator
+                                    </h1>
+                                    <p className="text-white text-opacity-90 text-sm">
+                                        Multi-Model AI Design Studio
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setDarkMode(!darkMode)}
+                                    className="w-10 h-10 rounded-full glass flex items-center justify-center text-white"
+                                >
+                                    {darkMode ? '☀️' : '🌙'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="px-4 py-6 max-w-6xl mx-auto">
+                        {/* Input Section */}
+                        <div className="glass rounded-2xl p-6 mb-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-white mb-2">
+                                        Logo Prompt
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={prompt}
+                                        onChange={(e) => setPrompt(e.target.value)}
+                                        placeholder="e.g., Modern law firm logo with scales of justice..."
+                                        className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                        onKeyPress={(e) => e.key === 'Enter' && !loading && generateLogos()}
+                                    />
+                                </div>
+
+                                <ModelSelector />
+
+                                <button
+                                    onClick={generateLogos}
+                                    disabled={loading || selectedModels.length === 0}
+                                    className={`w-full py-3 px-6 rounded-lg font-medium transition-all ${
+                                        loading || selectedModels.length === 0
+                                            ? 'bg-gray-400 cursor-not-allowed'
+                                            : 'bg-purple-600 hover:bg-purple-700 text-white'
+                                    }`}
+                                >
+                                    {loading ? (
+                                        <span className="flex items-center justify-center">
+                                            <div className="loading-spinner w-5 h-5 mr-2" />
+                                            Generating Logos...
+                                        </span>
+                                    ) : (
+                                        `Generate with ${selectedModels.length} Model${selectedModels.length !== 1 ? 's' : ''}`
+                                    )}
+                                </button>
+
+                                {loading && <ProgressIndicator />}
+                            </div>
+                        </div>
+
+                        {/* Gallery Controls */}
+                        {gallery.length > 0 && (
+                            <div className="glass rounded-2xl p-4 mb-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex space-x-2">
+                                        <button
+                                            onClick={() => setViewMode('grid')}
+                                            className={`px-3 py-1 rounded-lg text-sm ${
+                                                viewMode === 'grid' 
+                                                    ? 'bg-purple-500 text-white' 
+                                                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                                            }`}
+                                        >
+                                            Grid
+                                        </button>
+                                        <button
+                                            onClick={() => setViewMode('list')}
+                                            className={`px-3 py-1 rounded-lg text-sm ${
+                                                viewMode === 'list' 
+                                                    ? 'bg-purple-500 text-white' 
+                                                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                                            }`}
+                                        >
+                                            List
+                                        </button>
+                                        <button
+                                            onClick={() => setViewMode('carousel')}
+                                            className={`px-3 py-1 rounded-lg text-sm ${
+                                                viewMode === 'carousel' 
+                                                    ? 'bg-purple-500 text-white' 
+                                                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                                            }`}
+                                        >
+                                            Carousel
+                                        </button>
+                                    </div>
+                                    <div className="flex space-x-2">
+                                        <button
+                                            onClick={downloadAll}
+                                            className="px-3 py-1 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors"
+                                        >
+                                            Save All
+                                        </button>
+                                        <button
+                                            onClick={clearGallery}
+                                            className="px-3 py-1 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors"
+                                        >
+                                            Clear
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Gallery */}
+                        <div className="glass rounded-2xl p-6 safe-area-bottom">
+                            <GalleryView />
+                        </div>
+                    </div>
+
+                    {/* Image Modal */}
+                    <ImageModal />
+
+                    {/* Footer */}
+                    <div className="glass mt-8">
+                        <div className="px-4 py-6 text-center">
+                            <p className="text-white text-opacity-80 text-sm">
+                                Multi-Model Logo Generator • Powered by Hugging Face
+                            </p>
+                            <p className="text-white text-opacity-60 text-xs mt-2">
+                                Optimized for legal professionals exploring AI capabilities
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    ReactDOM.render(<LogoGenerator />, document.getElementById('root'));
+</script>
+```
+
+</body>
+</html>
