@@ -4,6 +4,17 @@
 
 This web application enables legal professionals to leverage multiple AI image generation models simultaneously through Hugging Face's infrastructure. Designed specifically for exploring machine learning capabilities in legal practice, this tool demonstrates practical applications of AI in professional branding and visual content creation.
 
+## 🌐 Live Demo
+
+**Access the app now**: `https://davidkarpay.github.io/logoi/`
+
+- ✅ **No installation required** - runs in your browser
+- ✅ **Mobile-friendly** - optimized for iPhone/iPad
+- ✅ **Encrypted storage** - your API key stays secure in your browser
+- ✅ **Add to home screen** - use like a native app
+
+For deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md)
+
 ## Key Features
 
 ### 🚀 Multi-Model Generation

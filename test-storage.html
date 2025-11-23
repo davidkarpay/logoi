@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>localStorage Test - API Key Encryption</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./secure-key-manager.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
+        <h1 class="text-2xl font-bold mb-4">🧪 localStorage Persistence Test</h1>
+
+        <div class="space-y-4">
+            <!-- Test 1: Check localStorage availability -->
+            <div class="border rounded p-4">
+                <h2 class="font-semibold mb-2">Test 1: localStorage Available</h2>
+                <button onclick="testLocalStorage()" class="bg-blue-500 text-white px-4 py-2 rounded">
+                    Run Test
+                </button>
+                <div id="test1-result" class="mt-2"></div>
+            </div>
+
+            <!-- Test 2: Store and retrieve data -->
+            <div class="border rounded p-4">
+                <h2 class="font-semibold mb-2">Test 2: Store & Retrieve</h2>
+                <button onclick="testStoreRetrieve()" class="bg-blue-500 text-white px-4 py-2 rounded">
+                    Run Test
+                </button>
+                <div id="test2-result" class="mt-2"></div>
+            </div>
+
+            <!-- Test 3: Encrypt and store API key -->
+            <div class="border rounded p-4">
+                <h2 class="font-semibold mb-2">Test 3: Encrypt & Store API Key</h2>
+                <input type="text" id="testKey" placeholder="Test API key" class="border rounded px-3 py-2 mr-2">
+                <input type="password" id="testPassword" placeholder="Password" class="border rounded px-3 py-2 mr-2">
+                <button onclick="testEncryptStore()" class="bg-blue-500 text-white px-4 py-2 rounded">
+                    Encrypt & Store
+                </button>
+                <div id="test3-result" class="mt-2"></div>
+            </div>
+
+            <!-- Test 4: Retrieve and decrypt -->
+            <div class="border rounded p-4">
+                <h2 class="font-semibold mb-2">Test 4: Retrieve & Decrypt</h2>
+                <input type="password" id="decryptPassword" placeholder="Password" class="border rounded px-3 py-2 mr-2">
+                <button onclick="testRetrieveDecrypt()" class="bg-blue-500 text-white px-4 py-2 rounded">
+                    Retrieve & Decrypt
+                </button>
+                <div id="test4-result" class="mt-2"></div>
+            </div>
+
+            <!-- Test 5: Check what's stored -->
+            <div class="border rounded p-4">
+                <h2 class="font-semibold mb-2">Test 5: View Stored Data</h2>
+                <button onclick="viewStored()" class="bg-blue-500 text-white px-4 py-2 rounded">
+                    View localStorage
+                </button>
+                <div id="test5-result" class="mt-2"></div>
+            </div>
+
+            <!-- Test 6: Clear all -->
+            <div class="border rounded p-4 bg-red-50">
+                <h2 class="font-semibold mb-2">Test 6: Clear All Data</h2>
+                <button onclick="clearAll()" class="bg-red-500 text-white px-4 py-2 rounded">
+                    Clear localStorage
+                </button>
+                <div id="test6-result" class="mt-2"></div>
+            </div>
+
+            <!-- Overall Results -->
+            <div id="overall-results" class="border-2 border-green-500 rounded p-4 mt-6 hidden">
+                <h2 class="font-bold text-lg mb-2 text-green-700">✅ All Tests Passed!</h2>
+                <p class="text-sm text-gray-700">
+                    Your browser supports localStorage and the encryption system is working correctly.
+                    You can safely use the encrypted API key storage feature!
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const keyManager = new SecureKeyManager();
+
+        function showResult(elementId, success, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `
+                <div class="p-3 rounded ${success ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                    ${success ? '✅' : '❌'} ${message}
+                </div>
+            `;
+        }
+
+        function testLocalStorage() {
+            try {
+                const test = 'test';
+                localStorage.setItem('test', test);
+                const retrieved = localStorage.getItem('test');
+                localStorage.removeItem('test');
+
+                if (retrieved === test) {
+                    showResult('test1-result', true, 'localStorage is available and working!');
+                } else {
+                    showResult('test1-result', false, 'localStorage retrieved incorrect value');
+                }
+            } catch (error) {
+                showResult('test1-result', false, `localStorage error: ${error.message}`);
+            }
+        }
+
+        function testStoreRetrieve() {
+            try {
+                const testData = { encrypted: true, timestamp: Date.now() };
+                localStorage.setItem('test_data', JSON.stringify(testData));
+
+                const retrieved = JSON.parse(localStorage.getItem('test_data'));
+
+                if (retrieved && retrieved.encrypted === true) {
+                    showResult('test2-result', true, 'Successfully stored and retrieved JSON data');
+                    localStorage.removeItem('test_data');
+                } else {
+                    showResult('test2-result', false, 'Data retrieval failed');
+                }
+            } catch (error) {
+                showResult('test2-result', false, `Error: ${error.message}`);
+            }
+        }
+
+        async function testEncryptStore() {
+            const testKey = document.getElementById('testKey').value;
+            const testPassword = document.getElementById('testPassword').value;
+
+            if (!testKey || !testPassword) {
+                showResult('test3-result', false, 'Please enter both test key and password');
+                return;
+            }
+
+            try {
+                const encrypted = await keyManager.encryptKey(testKey, testPassword);
+                keyManager.storeEncryptedKey(encrypted);
+
+                showResult('test3-result', true, `Key encrypted and stored! Length: ${encrypted.length} characters`);
+            } catch (error) {
+                showResult('test3-result', false, `Encryption failed: ${error.message}`);
+            }
+        }
+
+        async function testRetrieveDecrypt() {
+            const password = document.getElementById('decryptPassword').value;
+
+            if (!password) {
+                showResult('test4-result', false, 'Please enter password');
+                return;
+            }
+
+            try {
+                const encrypted = keyManager.getStoredEncryptedKey();
+
+                if (!encrypted) {
+                    showResult('test4-result', false, 'No encrypted key found in storage. Run Test 3 first.');
+                    return;
+                }
+
+                const decrypted = await keyManager.decryptKey(encrypted, password);
+
+                showResult('test4-result', true, `Successfully decrypted! Key: ${decrypted}`);
+            } catch (error) {
+                showResult('test4-result', false, `Decryption failed: ${error.message}`);
+            }
+        }
+
+        function viewStored() {
+            try {
+                const stored = keyManager.getStoredEncryptedKey();
+
+                if (!stored) {
+                    showResult('test5-result', false, 'No encrypted key found in localStorage');
+                    return;
+                }
+
+                const preview = stored.substring(0, 50) + '...';
+                showResult('test5-result', true, `
+                    <strong>Encrypted key found!</strong><br>
+                    <span class="text-xs font-mono">${preview}</span><br>
+                    <span class="text-xs">Total length: ${stored.length} characters</span>
+                `);
+            } catch (error) {
+                showResult('test5-result', false, `Error: ${error.message}`);
+            }
+        }
+
+        function clearAll() {
+            if (confirm('Clear all test data from localStorage?')) {
+                try {
+                    keyManager.clearStoredKey();
+                    localStorage.removeItem('test_data');
+                    showResult('test6-result', true, 'All test data cleared from localStorage');
+                } catch (error) {
+                    showResult('test6-result', false, `Error: ${error.message}`);
+                }
+            }
+        }
+
+        // Auto-run basic test on load
+        window.addEventListener('load', () => {
+            testLocalStorage();
+        });
+    </script>
+</body>
+</html>
