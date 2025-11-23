@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Integration Test Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./secure-key-manager.js"></script>
+    <script src="./hf-api-integration.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h1 class="text-3xl font-bold mb-2">🧪 API Integration Test Suite</h1>
+            <p class="text-gray-600 mb-4">Comprehensive tests for HuggingFace API integration and encryption</p>
+
+            <div class="flex gap-2 mb-4">
+                <button onclick="runAllTests()" class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600">
+                    Run All Tests
+                </button>
+                <button onclick="clearResults()" class="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600">
+                    Clear Results
+                </button>
+            </div>
+
+            <div id="progress" class="hidden mb-4">
+                <div class="bg-blue-100 border border-blue-400 rounded p-4">
+                    <div class="flex items-center">
+                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+                        <span class="text-blue-700 font-semibold">Running tests...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="summary" class="hidden mb-6"></div>
+        </div>
+
+        <div id="results" class="space-y-4"></div>
+    </div>
+
+    <script>
+        let testResults = [];
+        let totalTests = 0;
+        let passedTests = 0;
+        let failedTests = 0;
+
+        function showProgress() {
+            document.getElementById('progress').classList.remove('hidden');
+        }
+
+        function hideProgress() {
+            document.getElementById('progress').classList.add('hidden');
+        }
+
+        function updateSummary() {
+            const summaryDiv = document.getElementById('summary');
+            const passRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+
+            summaryDiv.innerHTML = `
+                <div class="bg-${passedTests === totalTests ? 'green' : 'yellow'}-100 border-2 border-${passedTests === totalTests ? 'green' : 'yellow'}-400 rounded-lg p-4">
+                    <h2 class="text-xl font-bold mb-2">Test Summary</h2>
+                    <div class="grid grid-cols-4 gap-4 text-center">
+                        <div>
+                            <div class="text-3xl font-bold">${totalTests}</div>
+                            <div class="text-sm text-gray-600">Total</div>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-bold text-green-600">${passedTests}</div>
+                            <div class="text-sm text-gray-600">Passed</div>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-bold text-red-600">${failedTests}</div>
+                            <div class="text-sm text-gray-600">Failed</div>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-bold">${passRate}%</div>
+                            <div class="text-sm text-gray-600">Pass Rate</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            summaryDiv.classList.remove('hidden');
+        }
+
+        function addTestResult(testName, passed, message, details = null) {
+            totalTests++;
+            if (passed) {
+                passedTests++;
+            } else {
+                failedTests++;
+            }
+
+            const resultsDiv = document.getElementById('results');
+            const testDiv = document.createElement('div');
+            testDiv.className = `border-2 rounded-lg p-4 ${passed ? 'bg-green-50 border-green-400' : 'bg-red-50 border-red-400'}`;
+
+            testDiv.innerHTML = `
+                <div class="flex items-start">
+                    <div class="text-2xl mr-3">${passed ? '✅' : '❌'}</div>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg mb-1">${testName}</h3>
+                        <p class="text-sm ${passed ? 'text-green-700' : 'text-red-700'}">${message}</p>
+                        ${details ? `<div class="mt-2 p-2 bg-white rounded border text-xs font-mono">${details}</div>` : ''}
+                    </div>
+                </div>
+            `;
+
+            resultsDiv.appendChild(testDiv);
+            testResults.push({ testName, passed, message, details });
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('summary').classList.add('hidden');
+            testResults = [];
+            totalTests = 0;
+            passedTests = 0;
+            failedTests = 0;
+        }
+
+        // TEST 1: Class Instantiation
+        async function testClassInstantiation() {
+            try {
+                const generator = new HuggingFaceMultiGenerator();
+
+                if (generator && typeof generator === 'object') {
+                    addTestResult(
+                        'Test 1: Class Instantiation',
+                        true,
+                        'HuggingFaceMultiGenerator class instantiated successfully',
+                        `Type: ${typeof generator}\nHas models: ${!!generator.models}\nModel count: ${Object.keys(generator.models).length}`
+                    );
+                } else {
+                    addTestResult(
+                        'Test 1: Class Instantiation',
+                        false,
+                        'Failed to instantiate class'
+                    );
+                }
+            } catch (error) {
+                addTestResult(
+                    'Test 1: Class Instantiation',
+                    false,
+                    `Error: ${error.message}`
+                );
+            }
+        }
+
+        // TEST 2: API Key Validation
+        async function testApiKeyValidation() {
+            try {
+                const generator = new HuggingFaceMultiGenerator();
+
+                // Test valid format
+                const validKey = 'hf_' + 'a'.repeat(35);
+                const isValid = generator.validateApiKey(validKey);
+
+                if (isValid) {
+                    addTestResult(
+                        'Test 2: API Key Validation',
+                        true,
+                        'API key validation working correctly',
+                        `Valid key format accepted: ${validKey.substring(0, 10)}...`
+                    );
+                } else {
+                    addTestResult(
+                        'Test 2: API Key Validation',
+                        false,
+                        'Validation failed for valid key format'
+                    );
+                }
+            } catch (error) {
+                addTestResult(
+                    'Test 2: API Key Validation',
+                    false,
+                    `Error: ${error.message}`
+                );
+            }
+        }
+
+        // TEST 3: Key Management Methods
+        async function testKeyManagement() {
+            try {
+                const generator = new HuggingFaceMultiGenerator();
+                const testKey = 'hf_' + 'test'.repeat(10);
+
+                // Test setApiKey
+                generator.setApiKey(testKey);
+                const hasKey = generator.hasApiKey();
+                const masked = generator.getMaskedApiKey();
+
+                // Test clearApiKey
+                generator.clearApiKey();
+                const clearedKey = generator.hasApiKey();
+
+                if (hasKey && !clearedKey && masked.includes('...')) {
+                    addTestResult(
+                        'Test 3: Key Management',
+                        true,
+                        'All key management methods working correctly',
+                        `setApiKey: ✓\nhasApiKey: ✓\ngetMaskedApiKey: ${masked}\nclearApiKey: ✓`
+                    );
+                } else {
+                    addTestResult(
+                        'Test 3: Key Management',
+                        false,
+                        'Key management methods not working as expected'
+                    );
+                }
+            } catch (error) {
+                addTestResult(
+                    'Test 3: Key Management',
+                    false,
+                    `Error: ${error.message}`
+                );
+            }
+        }
+
+        // TEST 4: Model Configuration
+        async function testModelConfiguration() {
+            try {
+                const generator = new HuggingFaceMultiGenerator();
+                const models = generator.models;
+
+                const expectedModels = [
+                    'stabilityai/stable-diffusion-2-1',
+                    'runwayml/stable-diffusion-v1-5',
+                    'CompVis/stable-diffusion-v1-4'
+                ];
+
+                const allModelsPresent = expectedModels.every(model => models[model]);
+                const allHaveEndpoints = Object.values(models).every(m => m.endpoint && m.name);
+
+                if (allModelsPresent && allHaveEndpoints) {
+                    addTestResult(
+                        'Test 4: Model Configuration',
+                        true,
+                        `All ${Object.keys(models).length} models configured correctly`,
+                        Object.keys(models).map(k => `${models[k].icon} ${models[k].name}`).join('\n')
+                    );
+                } else {
+                    addTestResult(
+                        'Test 4: Model Configuration',
+                        false,
+                        'Model configuration incomplete'
+                    );
+                }
+            } catch (error) {
+                addTestResult(
+                    'Test 4: Model Configuration',
+                    false,
+                    `Error: ${error.message}`
+                );
+            }
+        }
+
+        // TEST 5: Prompt Enhancement
+        async function testPromptEnhancement() {
+            try {
+                const generator = new HuggingFaceMultiGenerator();
+                const basePrompt = "Test logo";
+                const enhanced = generator.enhancePromptForLogo(basePrompt);
+
+                const hasEnhancements = enhanced.includes('professional') &&
+                                       enhanced.includes('minimalist') &&
+                                       enhanced.includes(basePrompt);
+
+                if (hasEnhancements) {
+                    addTestResult(
+                        'Test 5: Prompt Enhancement',
+                        true,
+                        'Prompt enhancement working correctly',
+                        `Original: "${basePrompt}"\nEnhanced: "${enhanced}"`
+                    );
+                } else {
+                    addTestResult(
+                        'Test 5: Prompt Enhancement',
+                        false,
+                        'Prompt enhancement not working as expected'
+                    );
+                }
+            } catch (error) {
+                addTestResult(
+                    'Test 5: Prompt Enhancement',
+                    false,
+                    `Error: ${error.message}`
+                );
+            }
+        }
+
+        // TEST 6: Encryption Integration
+        async function testEncryptionIntegration() {
+            try {
+                const keyManager = new SecureKeyManager();
+                const testKey = 'hf_' + 'test'.repeat(10);
+                const password = 'test_password_123';
+
+                // Encrypt
+                const encrypted = await keyManager.encryptKey(testKey, password);
+
+                // Decrypt
+                const decrypted = await keyManager.decryptKey(encrypted, password);
+
+                // Test with HuggingFaceMultiGenerator
+                const generator = new HuggingFaceMultiGenerator(decrypted, { validateKey: true });
+                const hasKey = generator.hasApiKey();
+
+                if (decrypted === testKey && hasKey) {
+                    addTestResult(
+                        'Test 6: Encryption Integration',
+                        true,
+                        'Encryption system integrated successfully',
+                        `Original key length: ${testKey.length}\nEncrypted length: ${encrypted.length}\nDecryption successful: ✓\nGenerator accepted key: ✓`
+                    );
+                } else {
+                    addTestResult(
+                        'Test 6: Encryption Integration',
+                        false,
+                        'Encryption integration failed'
+                    );
+                }
+            } catch (error) {
+                addTestResult(
+                    'Test 6: Encryption Integration',
+                    false,
+                    `Error: ${error.message}`
+                );
+            }
+        }
+
+        // TEST 7: Error Handling
+        async function testErrorHandling() {
+            try {
+                const generator = new HuggingFaceMultiGenerator();
+                let errorCaught = false;
+
+                // Should throw error when no API key configured
+                try {
+                    await generator.generateWithModel('stabilityai/stable-diffusion-2-1', 'test');
+                } catch (error) {
+                    if (error.message.includes('API key not configured')) {
+                        errorCaught = true;
+                    }
+                }
+
+                // Should throw error for invalid model
+                let invalidModelError = false;
+                generator.setApiKey('hf_' + 'test'.repeat(10));
+                try {
+                    await generator.generateWithModel('invalid-model-id', 'test');
+                } catch (error) {
+                    if (error.message.includes('not found')) {
+                        invalidModelError = true;
+                    }
+                }
+
+                if (errorCaught && invalidModelError) {
+                    addTestResult(
+                        'Test 7: Error Handling',
+                        true,
+                        'Error handling working correctly',
+                        'Missing API key error: ✓\nInvalid model error: ✓'
+                    );
+                } else {
+                    addTestResult(
+                        'Test 7: Error Handling',
+                        false,
+                        'Error handling not working as expected'
+                    );
+                }
+            } catch (error) {
+                addTestResult(
+                    'Test 7: Error Handling',
+                    false,
+                    `Error: ${error.message}`
+                );
+            }
+        }
+
+        // TEST 8: Default Parameters
+        async function testDefaultParameters() {
+            try {
+                const generator = new HuggingFaceMultiGenerator();
+                const params = generator.defaultParams;
+
+                const hasRequiredParams = params.num_inference_steps &&
+                                         params.guidance_scale &&
+                                         params.width &&
+                                         params.height;
+
+                if (hasRequiredParams) {
+                    addTestResult(
+                        'Test 8: Default Parameters',
+                        true,
+                        'Default parameters configured correctly',
+                        JSON.stringify(params, null, 2)
+                    );
+                } else {
+                    addTestResult(
+                        'Test 8: Default Parameters',
+                        false,
+                        'Default parameters missing or incomplete'
+                    );
+                }
+            } catch (error) {
+                addTestResult(
+                    'Test 8: Default Parameters',
+                    false,
+                    `Error: ${error.message}`
+                );
+            }
+        }
+
+        // TEST 9: SecureKeyManager Integration
+        async function testSecureKeyManager() {
+            try {
+                const keyManager = new SecureKeyManager();
+
+                // Test all methods exist
+                const hasMethods = typeof keyManager.encryptKey === 'function' &&
+                                  typeof keyManager.decryptKey === 'function' &&
+                                  typeof keyManager.validateApiKey === 'function' &&
+                                  typeof keyManager.storeEncryptedKey === 'function';
+
+                // Test encryption test
+                const testPassed = await keyManager.testEncryption();
+
+                if (hasMethods && testPassed) {
+                    addTestResult(
+                        'Test 9: SecureKeyManager',
+                        true,
+                        'SecureKeyManager fully functional',
+                        'All methods available: ✓\nEncryption test passed: ✓'
+                    );
+                } else {
+                    addTestResult(
+                        'Test 9: SecureKeyManager',
+                        false,
+                        'SecureKeyManager not fully functional'
+                    );
+                }
+            } catch (error) {
+                addTestResult(
+                    'Test 9: SecureKeyManager',
+                    false,
+                    `Error: ${error.message}`
+                );
+            }
+        }
+
+        // TEST 10: Browser Compatibility
+        async function testBrowserCompatibility() {
+            try {
+                const features = {
+                    localStorage: typeof localStorage !== 'undefined',
+                    webCrypto: typeof crypto !== 'undefined' && typeof crypto.subtle !== 'undefined',
+                    fetch: typeof fetch === 'function',
+                    Promise: typeof Promise !== 'undefined',
+                    URL: typeof URL !== 'undefined'
+                };
+
+                const allSupported = Object.values(features).every(f => f);
+
+                if (allSupported) {
+                    addTestResult(
+                        'Test 10: Browser Compatibility',
+                        true,
+                        'All required browser features available',
+                        Object.entries(features).map(([k, v]) => `${k}: ${v ? '✓' : '✗'}`).join('\n')
+                    );
+                } else {
+                    addTestResult(
+                        'Test 10: Browser Compatibility',
+                        false,
+                        'Some browser features missing',
+                        Object.entries(features).map(([k, v]) => `${k}: ${v ? '✓' : '✗'}`).join('\n')
+                    );
+                }
+            } catch (error) {
+                addTestResult(
+                    'Test 10: Browser Compatibility',
+                    false,
+                    `Error: ${error.message}`
+                );
+            }
+        }
+
+        async function runAllTests() {
+            clearResults();
+            showProgress();
+
+            await testClassInstantiation();
+            await testApiKeyValidation();
+            await testKeyManagement();
+            await testModelConfiguration();
+            await testPromptEnhancement();
+            await testEncryptionIntegration();
+            await testErrorHandling();
+            await testDefaultParameters();
+            await testSecureKeyManager();
+            await testBrowserCompatibility();
+
+            hideProgress();
+            updateSummary();
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Run tests on page load
+        window.addEventListener('load', () => {
+            console.log('🧪 API Integration Test Suite Loaded');
+            console.log('Click "Run All Tests" to begin testing');
+        });
+    </script>
+</body>
+</html>

@@ -248,6 +248,6 @@ Always verify licensing before commercial use.
 
 ---
 
-**For Legal Professionals By Legal Tech Advocates**
+**Built with ❤️ for Creative Professionals**
 
-*Empowering public defenders and legal aid attorneys with accessible AI tools*
+*Empowering creators and businesses with accessible AI tools*
