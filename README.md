@@ -30,13 +30,39 @@ This web application enables legal professionals to leverage multiple AI image g
 ### Option 1: Local Usage (No API Key Required)
 1. Open `logo-generator.html` in Safari on your iPhone
 2. Tap "Share" → "Add to Home Screen" for app-like experience
-3. Start generating with placeholder images (demo mode)
+3. Click "Skip (Use Placeholders)" when prompted for API key
+4. Start generating with placeholder images (demo mode)
 
-### Option 2: Full Hugging Face Integration
+### Option 2: Secure API Integration (Recommended)
 1. Get a free API key from [Hugging Face](https://huggingface.co/settings/tokens)
-2. Edit the `hf-api-integration.js` file
-3. Replace `YOUR_HF_API_KEY_HERE` with your actual key
-4. Open the HTML file and enjoy full functionality
+2. Open `logo-generator.html` in your browser
+3. When prompted, enter your API key
+4. Enable "Encrypt and store API key" (recommended)
+5. Create a strong encryption password
+6. Click "Save & Continue" - your key is now securely encrypted!
+
+### Option 3: Pre-encrypt Your API Key
+1. Open `encrypt-key-helper.html` in your browser
+2. Enter your API key and a strong password
+3. Copy the encrypted key
+4. Use the encrypted key in your `.env` file or application
+
+## 🔐 Security Features
+
+This application implements **enterprise-grade AES-256-GCM encryption** for API key protection:
+
+- ✅ **Client-Side Encryption**: Keys encrypted locally in your browser
+- ✅ **Zero-Knowledge Storage**: Encrypted keys stored in localStorage
+- ✅ **PBKDF2 Key Derivation**: 100,000 iterations (OWASP recommended)
+- ✅ **Memory Safety**: Keys cleared after use
+- ✅ **HTTPS Transit**: All API calls encrypted in transit
+
+**Security Tools Included**:
+- `secure-key-manager.js` - AES-256-GCM encryption library
+- `encrypt-key-helper.html` - Standalone encryption/decryption tool
+- `SECURITY.md` - Comprehensive security documentation
+
+**For detailed security information**, see [SECURITY.md](./SECURITY.md)
 
 ## Prompt Engineering for Legal Professionals
 
