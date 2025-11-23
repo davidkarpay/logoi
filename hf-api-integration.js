@@ -327,7 +327,7 @@ Multi-Model Logo Generator - Setup Guide
    
    // Generate with all models
    const results = await generator.generateWithAllModels(
-       "Modern law firm logo with scales of justice",
+       "Modern tech startup logo with abstract circuit design",
        null, // or array of model IDs to use specific models
        (modelId, status, result) => {
            console.log(\`Model \${modelId}: \${status}\`);
@@ -340,16 +340,16 @@ Multi-Model Logo Generator - Setup Guide
    // Save all images at once
    await generator.saveAllImages(results);
 
-3. OPTIMIZATION FOR LEGAL PROFESSIONALS:
-   
+3. OPTIMIZATION FOR PROFESSIONAL LOGOS:
+
    The system automatically enhances prompts for professional logo design.
-   Suggested prompts for law firms:
-   
-   - "Professional law firm logo with scales of justice, minimalist"
-   - "Legal services emblem with gavel and shield, corporate style"
-   - "Public defender office logo, modern and approachable"
-   - "Criminal defense attorney logo, strong and trustworthy"
-   - "Legal aid society logo, compassionate and professional"
+   Suggested prompts for businesses:
+
+   - "Professional tech company logo with circuit design, minimalist"
+   - "Consulting services emblem with abstract shapes, corporate style"
+   - "Coffee shop logo, modern and approachable"
+   - "Fitness brand logo, strong and energetic"
+   - "Creative agency logo, innovative and professional"
 
 4. IPHONE OPTIMIZATION:
    
@@ -375,14 +375,14 @@ Multi-Model Logo Generator - Setup Guide
    );
 
 6. BATCH PROCESSING FOR RESEARCH:
-   
+
    // Generate variations for A/B testing
    const prompts = [
-       "Law firm logo variant A",
-       "Law firm logo variant B",
-       "Law firm logo variant C"
+       "Startup logo variant A",
+       "Startup logo variant B",
+       "Startup logo variant C"
    ];
-   
+
    for (const prompt of prompts) {
        await generator.generateWithAllModels(prompt);
    }
